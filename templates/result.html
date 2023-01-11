@@ -1,0 +1,237 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    </head>
+
+    <body>
+    <p>Jumlah data awal : 541909</p><p>Jumlah data hasil cleaning : 406829</p><br><h5>data</h5><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>InvoiceNo</th>
+      <th>StockCode</th>
+      <th>Description</th>
+      <th>Quantity</th>
+      <th>InvoiceDate</th>
+      <th>UnitPrice</th>
+      <th>CustomerID</th>
+      <th>Country</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>536365</td>
+      <td>85123A</td>
+      <td>WHITE HANGING HEART T-LIGHT HOLDER</td>
+      <td>6</td>
+      <td>12/1/2010 8:26</td>
+      <td>2.55</td>
+      <td>17850.0</td>
+      <td>United Kingdom</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>536365</td>
+      <td>71053</td>
+      <td>WHITE METAL LANTERN</td>
+      <td>6</td>
+      <td>12/1/2010 8:26</td>
+      <td>3.39</td>
+      <td>17850.0</td>
+      <td>United Kingdom</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>536365</td>
+      <td>84406B</td>
+      <td>CREAM CUPID HEARTS COAT HANGER</td>
+      <td>8</td>
+      <td>12/1/2010 8:26</td>
+      <td>2.75</td>
+      <td>17850.0</td>
+      <td>United Kingdom</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>536365</td>
+      <td>84029G</td>
+      <td>KNITTED UNION FLAG HOT WATER BOTTLE</td>
+      <td>6</td>
+      <td>12/1/2010 8:26</td>
+      <td>3.39</td>
+      <td>17850.0</td>
+      <td>United Kingdom</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>536365</td>
+      <td>84029E</td>
+      <td>RED WOOLLY HOTTIE WHITE HEART.</td>
+      <td>6</td>
+      <td>12/1/2010 8:26</td>
+      <td>3.39</td>
+      <td>17850.0</td>
+      <td>United Kingdom</td>
+    </tr>
+  </tbody>
+</table><br><h5>RFM Table</h5><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>CustomerID</th>
+      <th>Monetary</th>
+      <th>Frequency</th>
+      <th>Recency</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>12346.0</td>
+      <td>0.00</td>
+      <td>2</td>
+      <td>325</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>12347.0</td>
+      <td>4310.00</td>
+      <td>182</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>12348.0</td>
+      <td>1797.24</td>
+      <td>31</td>
+      <td>74</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>12349.0</td>
+      <td>1757.55</td>
+      <td>73</td>
+      <td>18</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>12350.0</td>
+      <td>334.40</td>
+      <td>17</td>
+      <td>309</td>
+    </tr>
+  </tbody>
+</table><img src="../static/result1.png" alt="result1"><p>hasil dari Standardisation Scaling</p><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Amount</th>
+      <th>Frequency</th>
+      <th>Recency</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-0.723738</td>
+      <td>-0.752888</td>
+      <td>2.301611</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1.731617</td>
+      <td>1.042467</td>
+      <td>-0.906466</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.300128</td>
+      <td>-0.463636</td>
+      <td>-0.183658</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.277517</td>
+      <td>-0.044720</td>
+      <td>-0.738141</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-0.533235</td>
+      <td>-0.603275</td>
+      <td>2.143188</td>
+    </tr>
+  </tbody>
+</table><img src="../static/result2.png" alt="result2"><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>CustomerID</th>
+      <th>Monetary</th>
+      <th>Frequency</th>
+      <th>Recency</th>
+      <th>Cluster_Id</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>12346.0</td>
+      <td>0.00</td>
+      <td>2</td>
+      <td>325</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>12347.0</td>
+      <td>4310.00</td>
+      <td>182</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>12348.0</td>
+      <td>1797.24</td>
+      <td>31</td>
+      <td>74</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>12349.0</td>
+      <td>1757.55</td>
+      <td>73</td>
+      <td>18</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>12350.0</td>
+      <td>334.40</td>
+      <td>17</td>
+      <td>309</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table><img src="../static/result3.png" alt="result3"><img src="../static/result4.png" alt="result4"><img src="../static/result5.png" alt="result5"><img src="../static/result6.png" alt="result6"><img src="../static/result7.png" alt="result7"><img src="../static/result8.png" alt="result8"><img src="../static/result9.png" alt="result9">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <script>
+        window.onload = function(){
+            document.getElementByTagName('table').classList.add('table')
+        }
+    </script>
+
+    </body>
+
+    </html>

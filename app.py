@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 import datetime as dt
 
@@ -12,6 +13,7 @@ from sklearn.metrics import silhouette_score
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
+
 
 def convertToHtml(data):
     html = """
@@ -41,6 +43,7 @@ def convertToHtml(data):
     </html>"""
     return html
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -59,15 +62,15 @@ def result():
     # Load dataset
     df = pd.read_csv('OnlineRetail.csv', sep=",",
                      encoding="ISO-8859-1", header=0)
-    datahtml += '<h1>Dataset Online Retail</h1><p>suatu perusahaan retail online, dengan rentang waktu periode 1 Desember 2010 sampai dengan tanggal 9 Desember 2011</>' + df.head().to_html()
 
     # data cleaning
-    print('jumlah data awal : ', len(df))
+
+    datahtml += '<p>Jumlah data awal : ' + str(len(df)) + '</p>'
     df_null = round(100*(df.isnull().sum().to_frame())/len(df), 2)
     df = df.dropna()
-    print('Jumlah data null : ', df_null)
+    datahtml += '<p>Jumlah data hasil cleaning : ' + \
+        str(len(df)) + '</p>' + "<br><h5>data</h5>" + df.head().to_html()
     df['CustomerID'] = df.CustomerID.astype(str)
-
 
     # Membuat atribut baru : Monetary
     df['Monetary'] = df['Quantity']*df['UnitPrice']
@@ -82,7 +85,8 @@ def result():
     # merge atribut
     rfm = pd.merge(rfm_m, rfm_f, on='CustomerID', how='inner')
 
-    df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'], format='%m/%d/%Y %H:%M')
+    df['InvoiceDate'] = pd.to_datetime(
+        df['InvoiceDate'], format='%m/%d/%Y %H:%M')
     max_date = max(df['InvoiceDate'])
     df['Diff'] = max_date - df['InvoiceDate']
 
@@ -93,7 +97,7 @@ def result():
 
     rfm = pd.merge(rfm, rfm_p, on='CustomerID', how='inner')
     rfm.columns = ['CustomerID', 'Monetary', 'Frequency', 'Recency']
-    datahtml += rfm.head().to_html()
+    datahtml += "<br><h5>RFM Table</h5>" + rfm.head().to_html()
 
     # visualisasi data
     attributes = ['Monetary', 'Frequency', 'Recency']
@@ -131,18 +135,18 @@ def result():
     scaler = StandardScaler()
     # fit_transform
     rfm_df_scaled = scaler.fit_transform(rfm_df)
-
     rfm_df_scaled = pd.DataFrame(rfm_df_scaled)
     rfm_df_scaled.columns = ['Amount', 'Frequency', 'Recency']
-    datahtml += '<p>hasil dari Standardisation Scaling</p>' + rfm_df_scaled.head().to_html()
+    datahtml += '<p>hasil dari Standardisation Scaling</p>' + \
+        rfm_df_scaled.head().to_html()
 
     # K-Means Clustering
-    kmeans = KMeans(n_clusters=cluster_number, max_iter=50, n_init='auto') 
+    kmeans = KMeans(n_clusters=cluster_number, max_iter=50, n_init='auto')
     kmeans.fit(rfm_df_scaled)
 
     # Elbow-curve/SSD
     ssd = []
-    range_n_clusters = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+    range_n_clusters = [2, 3, 4, 5, 6, 7, 8]
     for num_clusters in range_n_clusters:
         kmeans = KMeans(n_clusters=num_clusters, max_iter=50, n_init='auto')
         kmeans.fit(rfm_df_scaled)
@@ -166,19 +170,58 @@ def result():
     # Boxplot untuk memvisualisasikan Cluster Id dan Monetary
     sns.boxplot(x='Cluster_Id', y='Monetary', data=rfm)
     plt.savefig('static/result3.png')
-    datahtml +=  '<img src="../static/result3.png" alt="result3">'
+    datahtml += '<img src="../static/result3.png" alt="result3">'
     plt.clf()
 
     # Boxplot untuk memvisualisasikan Cluster Id vs Frequency
     sns.boxplot(x='Cluster_Id', y='Frequency', data=rfm)
     plt.savefig('static/result4.png')
-    datahtml +=  '<img src="../static/result4.png" alt="result4">'
+    datahtml += '<img src="../static/result4.png" alt="result4">'
     plt.clf()
 
     # Boxplot untuk memvisualisasikan Cluster Id vs Recency
     sns.boxplot(x='Cluster_Id', y='Recency', data=rfm)
     plt.savefig('static/result5.png')
-    datahtml +=  '<img src="../static/result5.png" alt="result5">'
+    datahtml += '<img src="../static/result5.png" alt="result5">'
+    plt.clf()
+
+    # Plotting Recency and monetary
+    sns.scatterplot(x='Recency', y='Monetary', hue='Cluster_Id',
+                    palette=sns.color_palette('hls', cluster_number), data=rfm, legend='full')
+    plt.savefig('static/result6.png')
+    datahtml += '<img src="../static/result6.png" alt="result6">'
+    plt.clf()
+
+    # Plotting Frequency and monetary
+    sns.scatterplot(x='Frequency', y='Monetary', hue='Cluster_Id',
+                    palette=sns.color_palette('hls', cluster_number), data=rfm, legend='full')
+    plt.savefig('static/result7.png')
+    datahtml += '<img src="../static/result7.png" alt="result7">'
+    plt.clf()
+
+    # Plotting Frequency and Recency
+    sns.scatterplot(x='Frequency', y='Recency', hue='Cluster_Id',
+                    palette=sns.color_palette('hls', cluster_number), data=rfm, legend='full')
+    plt.savefig('static/result8.png')
+    datahtml += '<img src="../static/result8.png" alt="result8">'
+    plt.clf()
+
+    # 3D representation of all the segmented customers
+    fig = plt.figure(1)
+    ax = Axes3D(fig, rect=[0, 0, .95, 1], elev=48, azim=134)
+
+    plt.cla()
+    ax.scatter(rfm_df_scaled['Frequency'], rfm_df_scaled['Recency'], rfm_df_scaled['Amount'],
+               c=rfm['Cluster_Id'], s=200, cmap='spring', alpha=0.5, edgecolor='darkgrey')
+
+    ax.set_xlabel('Frequency', fontsize=16)
+    ax.set_ylabel('Recency', fontsize=16)
+    ax.set_zlabel('Monetary', fontsize=16)
+
+    ax.set_title('3D Plot of RFM Segments', fontsize=20)
+
+    plt.savefig('static/result9.png')
+    datahtml += '<img src="../static/result9.png" alt="result9">'
     plt.clf()
 
     #########################
@@ -188,6 +231,7 @@ def result():
     f.close()
 
     return render_template("result.html")
+
 
 if __name__ == "__main__":
     # app.debug = True
