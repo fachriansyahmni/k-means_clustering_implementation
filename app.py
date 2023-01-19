@@ -140,6 +140,18 @@ def result():
     datahtml += '<p>hasil dari Standardisation Scaling</p>' + \
         rfm_df_scaled.head().to_html()
 
+    # visualisasi data setelah dilakukan cleaning data
+    attributes = ['Amount', 'Frequency', 'Recency']
+    plt.rcParams['figure.figsize'] = [10, 8]
+    sns.boxplot(data=rfm_df_scaled[attributes], orient="v",
+                palette="Set2", whis=1.5, saturation=1, width=0.7)
+    plt.title("Outliers Variable Distribution", fontsize=14, fontweight='bold')
+    plt.ylabel("Range", fontweight='bold')
+    plt.xlabel("Attributes", fontweight='bold')
+    plt.savefig('static/result-cleaned-data.png')
+    datahtml += '<img src="../static/result-cleaned-data.png" alt="result1">'
+    plt.clf()
+
     # K-Means Clustering
     kmeans = KMeans(n_clusters=cluster_number, max_iter=50, n_init='auto')
     kmeans.fit(rfm_df_scaled)
