@@ -1,14 +1,8 @@
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import seaborn as sns
-import datetime as dt
-
-import sklearn
-from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from matplotlib import pyplot as plt
+from sklearn.preprocessing import LabelEncoder
 
 from flask import Flask, render_template, request
 
@@ -51,192 +45,121 @@ def index():
 
 @app.route("/cluster", methods=['POST', 'GET'])
 def result():
-    cluster_number = 2
+    cluster_number = 3
 
     # validation if has request
-    if request.method == 'POST':
-        if request.form['cluster_number'] != '':
-            cluster_number = int(request.form['cluster_number'])
+    # if request.method == 'POST':
+    #     if request.form['cluster_number'] != '':
+    #         cluster_number = int(request.form['cluster_number'])
 
     datahtml = ""
+    
     # Load dataset
-    df = pd.read_csv('OnlineRetail.csv', sep=",",
-                     encoding="ISO-8859-1", header=0)
+    df = pd.read_csv('data.csv', delimiter=';', skiprows=0, low_memory=False)
+    # menampilkan sample data sebanyak 5 baris
+    datahtml += "<h1>Sample Data</h1>" + df.head().to_html()
 
-    # data cleaning
+    # scatter plot
+    plt.scatter(df['jumlah_transaksi'], df['total_penjualan'])
+    plt.xlabel('Jumlah Transaksi')
+    plt.ylabel('Total Penjualan')
+    plt.savefig('static/scatter.png')
+    datahtml += '<hr><p>Visualisasi dengan Scatter Plot</p><img src="../static/scatter.png" alt="scatter" width="500" height="500">'
 
-    datahtml += '<p>Jumlah data awal : ' + str(len(df)) + '</p>'
-    df_null = round(100*(df.isnull().sum().to_frame())/len(df), 2)
-    df = df.dropna()
-    datahtml += '<p>Jumlah data hasil cleaning : ' + \
-        str(len(df)) + '</p>' + "<br><h5>data</h5>" + df.head().to_html()
-    df['CustomerID'] = df.CustomerID.astype(str)
+    # k-means clustering
+    km = KMeans(n_clusters=cluster_number)
 
-    # Membuat atribut baru : Monetary
-    df['Monetary'] = df['Quantity']*df['UnitPrice']
-    rfm_m = df.groupby('CustomerID')['Monetary'].sum()
-    rfm_m = rfm_m.reset_index()
+    # melakukan prediksi
+    y_predicted = km.fit_predict(df[['jumlah_transaksi','total_penjualan']])
 
-    # Membuat atribut baru : Frequency
-    rfm_f = df.groupby('CustomerID')['InvoiceNo'].count()
-    rfm_f = rfm_f.reset_index()
-    rfm_f.columns = ['CustomerID', 'Frequency']
+    # hasil prediksi
+    df['cluster'] = y_predicted
+    datahtml += df.head().to_html()
 
-    # merge atribut
-    rfm = pd.merge(rfm_m, rfm_f, on='CustomerID', how='inner')
+    # 
+    df1 = df[df.cluster == 0]
+    df2 = df[df.cluster == 1]
+    df3 = df[df.cluster == 2]
 
-    df['InvoiceDate'] = pd.to_datetime(
-        df['InvoiceDate'], format='%m/%d/%Y %H:%M')
-    max_date = max(df['InvoiceDate'])
-    df['Diff'] = max_date - df['InvoiceDate']
-
-    rfm_p = df.groupby('CustomerID')['Diff'].min()
-    rfm_p = rfm_p.reset_index()
-
-    rfm_p['Diff'] = rfm_p['Diff'].dt.days
-
-    rfm = pd.merge(rfm, rfm_p, on='CustomerID', how='inner')
-    rfm.columns = ['CustomerID', 'Monetary', 'Frequency', 'Recency']
-    datahtml += "<br><h5>RFM Table</h5>" + rfm.head().to_html()
-
-    # visualisasi data
-    attributes = ['Monetary', 'Frequency', 'Recency']
-    plt.switch_backend('agg')
-    plt.rcParams['figure.figsize'] = [10, 8]
-    sns.boxplot(data=rfm[attributes], orient="v",
-                palette="Set2", whis=1.5, saturation=1, width=0.7)
-    plt.title("Outliers Variable Distribution", fontsize=14, fontweight='bold')
-    plt.ylabel("Range", fontweight='bold')
-    plt.xlabel("Attributes", fontweight='bold')
-    plt.savefig('static/result1.png')
-    datahtml += '<img src="../static/result1.png" alt="result1">'
+    plt.scatter(df1.jumlah_transaksi, df1.total_penjualan, color='green', label='cluster 0')
+    plt.scatter(df2.jumlah_transaksi, df2.total_penjualan, color='red', label='cluster 1')
+    plt.scatter(df3.jumlah_transaksi, df3.total_penjualan, color='blue', label='cluster 2')
+    plt.xlabel('Jumlah Transaksi')
+    plt.ylabel('Total Penjualan')
+    plt.legend()
+    plt.savefig('static/scatter_cluster.png')
     plt.clf()
+    datahtml += '<img src="../static/scatter_cluster.png" alt="scatter" width="500" height="500">'
 
-    # Removing (statistical) outliers for Monetary
-    Q1 = rfm.Monetary.quantile(0.05)
-    Q3 = rfm.Monetary.quantile(0.95)
-    IQR = Q3 - Q1
-    rfm = rfm[(rfm.Monetary >= Q1 - 1.5*IQR) & (rfm.Monetary <= Q3 + 1.5*IQR)]
-    # Removing (statistical) outliers for Recency
-    Q1 = rfm.Recency.quantile(0.05)
-    Q3 = rfm.Recency.quantile(0.95)
-    IQR = Q3 - Q1
-    rfm = rfm[(rfm.Recency >= Q1 - 1.5*IQR) & (rfm.Recency <= Q3 + 1.5*IQR)]
-    # Removing (statistical) outliers for Frequency
-    Q1 = rfm.Frequency.quantile(0.05)
-    Q3 = rfm.Frequency.quantile(0.95)
-    IQR = Q3 - Q1
-    rfm = rfm[(rfm.Frequency >= Q1 - 1.5*IQR) &
-              (rfm.Frequency <= Q3 + 1.5*IQR)]
+    # menskalakan data menggunakan MinMaxScaler
+    scaler = MinMaxScaler()
+    scaler.fit(df[['total_penjualan']])
+    df['total_penjualan_cluster']= scaler.transform(df[['total_penjualan']])
 
-    # Rescaling Atribute
-    rfm_df = rfm[['Monetary', 'Frequency', 'Recency']]
-    # Instantiate
-    scaler = StandardScaler()
-    # fit_transform
-    rfm_df_scaled = scaler.fit_transform(rfm_df)
-    rfm_df_scaled = pd.DataFrame(rfm_df_scaled)
-    rfm_df_scaled.columns = ['Amount', 'Frequency', 'Recency']
-    datahtml += '<p>hasil dari Standardisation Scaling</p>' + \
-        rfm_df_scaled.head().to_html()
+    scaler.fit(df[['jumlah_transaksi']])
+    df['jumlah_transaksi_cluster'] = scaler.transform(df[['jumlah_transaksi']])
 
-    # visualisasi data setelah dilakukan cleaning data
-    attributes = ['Amount', 'Frequency', 'Recency']
-    plt.rcParams['figure.figsize'] = [10, 8]
-    sns.boxplot(data=rfm_df_scaled[attributes], orient="v",
-                palette="Set2", whis=1.5, saturation=1, width=0.7)
-    plt.title("Outliers Variable Distribution", fontsize=14, fontweight='bold')
-    plt.ylabel("Range", fontweight='bold')
-    plt.xlabel("Attributes", fontweight='bold')
-    plt.savefig('static/result-cleaned-data.png')
-    datahtml += '<img src="../static/result-cleaned-data.png" alt="result1">'
+    # k-means clustering
+    km = KMeans(n_clusters=3)
+    y_predicted = km.fit_predict(df[['jumlah_transaksi','total_penjualan']])
+
+    
+    # menampilkan hasil prediksi
+    df1 = df[df.cluster == 0]
+    df2 = df[df.cluster == 1]
+    df3 = df[df.cluster == 2]
+
+    plt.scatter(df1.jumlah_transaksi, df1.total_penjualan, color='green', label='cluster 0')
+    plt.scatter(df2.jumlah_transaksi, df2.total_penjualan, color='red', label='cluster 1')
+    plt.scatter(df3.jumlah_transaksi, df3.total_penjualan, color='blue', label='cluster 2')
+    plt.xlabel('Jumlah Transaksi')
+    plt.ylabel('Total Penjualan')
+    plt.scatter(km.cluster_centers_[:,0],km.cluster_centers_[:,1],color='black',marker='*',label='centroid' )
+    plt.legend()
+    plt.savefig('static/scatter_cluster2.png')
     plt.clf()
+    datahtml += '<img src="../static/scatter_cluster2.png" alt="scatter" width="500" height="500">'
 
-    # K-Means Clustering
-    kmeans = KMeans(n_clusters=cluster_number, max_iter=50, n_init='auto')
-    kmeans.fit(rfm_df_scaled)
+    # k range 1-10
+    k_rng = range(1,10)
+    sse = []
 
-    # Elbow-curve/SSD
-    ssd = []
-    range_n_clusters = [2, 3, 4, 5, 6, 7, 8]
-    for num_clusters in range_n_clusters:
-        kmeans = KMeans(n_clusters=num_clusters, max_iter=50, n_init='auto')
-        kmeans.fit(rfm_df_scaled)
+    for k in k_rng:
+        km = KMeans(n_clusters=k)
+        km.fit(df[['jumlah_transaksi','total_penjualan']])
+        sse.append(km.inertia_)
+    
+    plt.xlabel('K')
+    plt.ylabel('Sum of Squared Error')
+    plt.plot(k_rng, sse)
+    plt.savefig('static/elbow.png')
+    datahtml += '<img src="../static/elbow.png" alt="scatter" width="500" height="500">'
 
-        ssd.append(kmeans.inertia_)
+    selected_cols = ["jumlah_transaksi","total_penjualan"]
+    cluster_data = df.loc[:,selected_cols]
 
-    # plot the SSDs for each n_clusters
-    plt.plot(ssd)
-    plt.savefig('static/result2.png')
-    datahtml += '<img src="../static/result2.png" alt="result2">'
-    plt.clf()
+    kmeans_sel = KMeans(init='k-means++', n_clusters=3, n_init=100, random_state=2).fit(cluster_data)
+    labels = pd.DataFrame(kmeans_sel.labels_)
+    clustered_data = cluster_data.assign(Cluster=labels)
 
-    # Final model with k={value}
-    kmeans = KMeans(n_clusters=cluster_number, max_iter=50, n_init='auto')
-    kmeans.fit(rfm_df_scaled)
+    grouped_km = clustered_data.groupby(['Cluster']).mean().round(1)
+    datahtml += grouped_km.to_html()
 
-    # Assign the label
-    rfm['Cluster_Id'] = kmeans.labels_
-    datahtml += rfm.head().to_html()
+    datahtml += "<h1>Hasil Clustering</h1>"
+    # limit 5 data
+    datahtml += "<p>Cluster 0</p>"
+    datahtml += df[df.cluster == 0].head().to_html()
+    datahtml += "<p>Cluster 1</p>"
+    datahtml += df[df.cluster == 1].to_html()
+    datahtml += "<p>Cluster 2</p>"
+    datahtml += df[df.cluster == 2].to_html()
 
-    # Boxplot untuk memvisualisasikan Cluster Id dan Monetary
-    sns.boxplot(x='Cluster_Id', y='Monetary', data=rfm)
-    plt.savefig('static/result3.png')
-    datahtml += '<img src="../static/result3.png" alt="result3">'
-    plt.clf()
+    # sort by cluster
+    # df.sort_values(by=['cluster'])
+    # datahtml += df.to_html()
+    
 
-    # Boxplot untuk memvisualisasikan Cluster Id vs Frequency
-    sns.boxplot(x='Cluster_Id', y='Frequency', data=rfm)
-    plt.savefig('static/result4.png')
-    datahtml += '<img src="../static/result4.png" alt="result4">'
-    plt.clf()
 
-    # Boxplot untuk memvisualisasikan Cluster Id vs Recency
-    sns.boxplot(x='Cluster_Id', y='Recency', data=rfm)
-    plt.savefig('static/result5.png')
-    datahtml += '<img src="../static/result5.png" alt="result5">'
-    plt.clf()
-
-    # Plotting Recency and monetary
-    sns.scatterplot(x='Recency', y='Monetary', hue='Cluster_Id',
-                    palette=sns.color_palette('hls', cluster_number), data=rfm, legend='full')
-    plt.savefig('static/result6.png')
-    datahtml += '<img src="../static/result6.png" alt="result6">'
-    plt.clf()
-
-    # Plotting Frequency and monetary
-    sns.scatterplot(x='Frequency', y='Monetary', hue='Cluster_Id',
-                    palette=sns.color_palette('hls', cluster_number), data=rfm, legend='full')
-    plt.savefig('static/result7.png')
-    datahtml += '<img src="../static/result7.png" alt="result7">'
-    plt.clf()
-
-    # Plotting Frequency and Recency
-    sns.scatterplot(x='Frequency', y='Recency', hue='Cluster_Id',
-                    palette=sns.color_palette('hls', cluster_number), data=rfm, legend='full')
-    plt.savefig('static/result8.png')
-    datahtml += '<img src="../static/result8.png" alt="result8">'
-    plt.clf()
-
-    # 3D representation of all the segmented customers
-    fig = plt.figure(1)
-    ax = Axes3D(fig, rect=[0, 0, .95, 1], elev=48, azim=134)
-
-    plt.cla()
-    ax.scatter(rfm_df_scaled['Frequency'], rfm_df_scaled['Recency'], rfm_df_scaled['Amount'],
-               c=rfm['Cluster_Id'], s=200, cmap='spring', alpha=0.5, edgecolor='darkgrey')
-
-    ax.set_xlabel('Frequency', fontsize=16)
-    ax.set_ylabel('Recency', fontsize=16)
-    ax.set_zlabel('Monetary', fontsize=16)
-
-    ax.set_title('3D Plot of RFM Segments', fontsize=20)
-
-    plt.savefig('static/result9.png')
-    datahtml += '<img src="../static/result9.png" alt="result9">'
-    plt.clf()
-
-    #########################
     f = open('templates/result.html', 'w')
     f.write(convertToHtml(datahtml))
 
@@ -246,5 +169,5 @@ def result():
 
 
 if __name__ == "__main__":
-    # app.debug = True
+    app.debug = True
     app.run()
