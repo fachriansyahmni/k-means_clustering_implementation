@@ -24,6 +24,14 @@
             <input type="number" class="form-control" id="cluster" name="cluster_number"
               placeholder="Masukkan jumlah cluster">
           </div>
+          <div class="mb-3">
+            <label for="cluster" class="form-label">Data Cluster yang ingin ditampilkan</label>
+            <br>
+            <input type="radio" id="pilihan" name="pilihan_cluster" value="cluster_0"> Cluster Pertama
+            <input type="radio" id="pilihan" name="pilihan_cluster" value="cluster_1"> Cluster Kedua
+            <input type="radio" id="pilihan" name="pilihan_cluster" value="cluster_2"> Cluster Ketiga
+            <input type="radio" id="pilihan" name="pilihan_cluster" value="cluster_3"> Semua Cluster
+          </div>
           <button type="submit" id="btn-result" class="btn btn-primary" onclick="showLoading()">Tampil Hasil</button>
         </form>
       </div>
