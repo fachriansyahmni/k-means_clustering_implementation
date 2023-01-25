@@ -15,22 +15,20 @@
   <div class="container">
     <div class="row h-100">
       <div class="col-md-6">
-        <h1>Segmentasi Customer dengan K-Means Clustering</h1>
-        <p>Studi Kasus: Perusahaan retail online, dengan rentang waktu periode 1 Desember 2010 sampai dengan tanggal 9
-          Desember 2011</p>
+        <h1>Segmentasi Produk Pada Penjualan dengan K-Means Clustering</h1>
+        <p>Studi Kasus: Data transaksi penjualan disalah satu toko retail online</p>
         <form action="http://localhost:5000/cluster" method="POST" target="frame_result">
           <div class="mb-3">
-            <label for="cluster" class="form-label">Jumlah Cluster</label>
-            <input type="number" class="form-control" id="cluster" name="cluster_number"
-              placeholder="Masukkan jumlah cluster">
-          </div>
-          <div class="mb-3">
-            <label for="cluster" class="form-label">Data Cluster yang ingin ditampilkan</label>
+            <label for="cluster" class="form-label">Data Produk yang ingin ditampilkan</label>
             <br>
-            <input type="radio" id="pilihan" name="pilihan_cluster" value="cluster_0"> Cluster Pertama
-            <input type="radio" id="pilihan" name="pilihan_cluster" value="cluster_1"> Cluster Kedua
-            <input type="radio" id="pilihan" name="pilihan_cluster" value="cluster_2"> Cluster Ketiga
-            <input type="radio" id="pilihan" name="pilihan_cluster" value="cluster_3"> Semua Cluster
+            <input type="radio" id="pilihan1" name="pilihan_cluster" value="0">
+            <label for="pilihan1"> Terlaris</label>
+            <input type="radio" id="pilihan2" name="pilihan_cluster" value="1">
+            <label for="pilihan2"> Laris</label>
+            <input type="radio" id="pilihan3" name="pilihan_cluster" value="2">
+            <label for="pilihan3"> Kurang Laris</label>
+            <input checked type="radio" id="pilihan4" name="pilihan_cluster" value="3"> <label for="pilihan4">Semua
+              Cluster</label>
           </div>
           <button type="submit" id="btn-result" class="btn btn-primary" onclick="showLoading()">Tampil Hasil</button>
         </form>
@@ -39,7 +37,7 @@
   </div>
 
   <!-- iframe -->
-  <div class="container">
+  <div class="container mt-4">
     <div class="row min-vh-100">
       <div class="col-md-12">
         <iframe name="frame_result" src="" frameborder="0" width="100%" height="100%"></iframe>

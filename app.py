@@ -1,6 +1,8 @@
 from sklearn.cluster import KMeans
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import LabelEncoder
 
@@ -9,7 +11,7 @@ from flask import Flask, render_template, request
 app = Flask(__name__)
 
 
-def convertToHtml(data):
+def convertToHtml(result,data):
     html = """
     <!DOCTYPE html>
     <html lang="en">
@@ -20,16 +22,40 @@ def convertToHtml(data):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.1/datatables.min.css"/>
     </head>
 
     <body>
-    """ + data + """
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="result-tab" data-bs-toggle="tab" data-bs-target="#result" type="button" role="tab" aria-controls="result" aria-selected="true">Result</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="false">Show Details</button>
+        </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="result" role="tabpanel" aria-labelledby="result-tab">
+        """ + result + """
+        </div>
+        <div class="tab-pane fade" id="details" role="tabpanel" aria-labelledby="details-tab">
+            """ + data + """
+        </div>
+    </div>
+    
 
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs5/dt-1.13.1/datatables.min.js"></script>
     <script>
         window.onload = function(){
             document.getElementByTagName('table').classList.add('table')
         }
+        $(document).ready(function () {
+            $('#resulttbl').DataTable();
+            $('#resulttbl2').DataTable();
+            $('#resulttbl3').DataTable();
+        });
     </script>
 
     </body>
@@ -47,6 +73,14 @@ def index():
 def result():
     cluster_number = 3
 
+    labelsArr = [
+        "Terlaris",
+        "Laris",
+        "Kurang Laris"
+    ]
+
+    selectedLabel = int(request.form['pilihan_cluster'])
+    print(labelsArr[selectedLabel])
     # validation if has request
     # if request.method == 'POST':
     #     if request.form['cluster_number'] != '':
@@ -67,7 +101,7 @@ def result():
     datahtml += '<hr><p>Visualisasi dengan Scatter Plot</p><img src="../static/scatter.png" alt="scatter" width="500" height="500">'
 
     # k-means clustering
-    km = KMeans(n_clusters=cluster_number)
+    km = KMeans(n_clusters=cluster_number, n_init='auto')
 
     # melakukan prediksi
     y_predicted = km.fit_predict(df[['jumlah_transaksi','total_penjualan']])
@@ -100,7 +134,7 @@ def result():
     df['jumlah_transaksi_cluster'] = scaler.transform(df[['jumlah_transaksi']])
 
     # k-means clustering
-    km = KMeans(n_clusters=3)
+    km = KMeans(n_clusters=cluster_number, n_init='auto')
     y_predicted = km.fit_predict(df[['jumlah_transaksi','total_penjualan']])
 
     
@@ -125,7 +159,7 @@ def result():
     sse = []
 
     for k in k_rng:
-        km = KMeans(n_clusters=k)
+        km = KMeans(n_clusters=k, n_init='auto')
         km.fit(df[['jumlah_transaksi','total_penjualan']])
         sse.append(km.inertia_)
     
@@ -138,7 +172,7 @@ def result():
     selected_cols = ["jumlah_transaksi","total_penjualan"]
     cluster_data = df.loc[:,selected_cols]
 
-    kmeans_sel = KMeans(init='k-means++', n_clusters=3, n_init=100, random_state=2).fit(cluster_data)
+    kmeans_sel = KMeans(init='k-means++', n_clusters=cluster_number, n_init='auto', random_state=2).fit(cluster_data)
     labels = pd.DataFrame(kmeans_sel.labels_)
     clustered_data = cluster_data.assign(Cluster=labels)
 
@@ -154,14 +188,84 @@ def result():
     datahtml += "<p>Cluster 2</p>"
     datahtml += df[df.cluster == 2].to_html()
 
-    # sort by cluster
-    # df.sort_values(by=['cluster'])
-    # datahtml += df.to_html()
+    # labeling cluster
+    maxjmltransaksicluster1 = df[df.cluster == 0].jumlah_transaksi_cluster.max()
+    maxjmltransaksicluster2 = df[df.cluster == 1].jumlah_transaksi_cluster.max()
+    maxjmltransaksicluster3 = df[df.cluster == 2].jumlah_transaksi_cluster.max()
+
+    # new array
+    newarr = [maxjmltransaksicluster1,maxjmltransaksicluster2,maxjmltransaksicluster3]
+    # sort array
+    newarr.sort()
     
+
+    result = "Hasil Clustering"
+    result += "<br>"
+    kodeBrg = df[df.cluster == 0].kode_barang
+    namaBrg = df[df.cluster == 0].nama_barang
+    jmlTrans = df[df.cluster == 0].jumlah_transaksi
+    totPenj = df[df.cluster == 0].total_penjualan
+    result += "<table id='resulttbl' class='table table-striped table-hover'>"
+    result += "<thead><tr>"
+    result += "<th>Kode Barang</th>"
+    result += "<th>Nama Barang</th>"
+    result += "<th>Jumlah Transaksi</th>"
+    result += "<th>Total Penjualan</th>"
+    result += "</tr></thead><tbody>"
+    for i in range(len(kodeBrg)):
+        result += "<tr>"
+        result += "<td>"+kodeBrg.iloc[i]+"</td>"
+        result += "<td>"+str(namaBrg.iloc[i])+"</td>"
+        result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
+        result += "<td>"+str(totPenj.iloc[i])+"</td>"
+        result += "</tr>"
+    result += "</tbody></table>"
+    kodeBrg = df[df.cluster == 1].kode_barang
+    namaBrg = df[df.cluster == 1].nama_barang
+    jmlTrans = df[df.cluster == 1].jumlah_transaksi
+    totPenj = df[df.cluster == 1].total_penjualan
+    result += "<table id='resulttbl2' class='table table-striped table-hover'>"
+    result += "<thead><tr>"
+    result += "<th>Kode Barang</th>"
+    result += "<th>Nama Barang</th>"
+    result += "<th>Jumlah Transaksi</th>"
+    result += "<th>Total Penjualan</th>"
+    result += "</tr></thead><tbody>"
+    for i in range(len(kodeBrg)):
+        result += "<tr>"
+        result += "<td>"+kodeBrg.iloc[i]+"</td>"
+        result += "<td>"+str(namaBrg.iloc[i])+"</td>"
+        result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
+        result += "<td>"+str(totPenj.iloc[i])+"</td>"
+        result += "</tr>"
+    result += "</tbody></table>"
+    kodeBrg = df[df.cluster == 2].kode_barang
+    namaBrg = df[df.cluster == 2].nama_barang
+    jmlTrans = df[df.cluster == 2].jumlah_transaksi
+    totPenj = df[df.cluster == 2].total_penjualan
+    result += "<table id='resulttbl3' class='table table-striped table-hover'>"
+    result += "<thead><tr>"
+    result += "<th>Kode Barang</th>"
+    result += "<th>Nama Barang</th>"
+    result += "<th>Jumlah Transaksi</th>"
+    result += "<th>Total Penjualan</th>"
+    result += "</tr></thead><tbody>"
+    for i in range(len(kodeBrg)):
+        result += "<tr>"
+        result += "<td>"+kodeBrg.iloc[i]+"</td>"
+        result += "<td>"+str(namaBrg.iloc[i])+"</td>"
+        result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
+        result += "<td>"+str(totPenj.iloc[i])+"</td>"
+        result += "</tr>"
+    result += "</tbody></table>"
+
+
+
+    # result += df[df.cluster == 0].head().to_html()
 
 
     f = open('templates/result.html', 'w')
-    f.write(convertToHtml(datahtml))
+    f.write(convertToHtml(result,datahtml))
 
     f.close()
 
