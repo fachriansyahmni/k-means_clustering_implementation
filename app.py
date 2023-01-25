@@ -80,11 +80,6 @@ def result():
     ]
 
     selectedLabel = int(request.form['pilihan_cluster'])
-    print(labelsArr[selectedLabel])
-    # validation if has request
-    # if request.method == 'POST':
-    #     if request.form['cluster_number'] != '':
-    #         cluster_number = int(request.form['cluster_number'])
 
     datahtml = ""
     
@@ -98,6 +93,7 @@ def result():
     plt.xlabel('Jumlah Transaksi')
     plt.ylabel('Total Penjualan')
     plt.savefig('static/scatter.png')
+    plt.clf()
     datahtml += '<hr><p>Visualisasi dengan Scatter Plot</p><img src="../static/scatter.png" alt="scatter" width="500" height="500">'
 
     # k-means clustering
@@ -110,7 +106,7 @@ def result():
     df['cluster'] = y_predicted
     datahtml += df.head().to_html()
 
-    # 
+    # pemberian label cluster
     df1 = df[df.cluster == 0]
     df2 = df[df.cluster == 1]
     df3 = df[df.cluster == 2]
@@ -167,6 +163,7 @@ def result():
     plt.ylabel('Sum of Squared Error')
     plt.plot(k_rng, sse)
     plt.savefig('static/elbow.png')
+    plt.clf()
     datahtml += '<img src="../static/elbow.png" alt="scatter" width="500" height="500">'
 
     selected_cols = ["jumlah_transaksi","total_penjualan"]
@@ -184,9 +181,9 @@ def result():
     datahtml += "<p>Cluster 0</p>"
     datahtml += df[df.cluster == 0].head().to_html()
     datahtml += "<p>Cluster 1</p>"
-    datahtml += df[df.cluster == 1].to_html()
+    datahtml += df[df.cluster == 1].head().to_html()
     datahtml += "<p>Cluster 2</p>"
-    datahtml += df[df.cluster == 2].to_html()
+    datahtml += df[df.cluster == 2].head().to_html()
 
     # labeling cluster
     maxjmltransaksicluster1 = df[df.cluster == 0].jumlah_transaksi_cluster.max()
@@ -194,70 +191,106 @@ def result():
     maxjmltransaksicluster3 = df[df.cluster == 2].jumlah_transaksi_cluster.max()
 
     # new array
+    labelarr = []
     newarr = [maxjmltransaksicluster1,maxjmltransaksicluster2,maxjmltransaksicluster3]
-    # sort array
-    newarr.sort()
-    
+    oldarr = [maxjmltransaksicluster1,maxjmltransaksicluster2,maxjmltransaksicluster3]
 
-    result = "Hasil Clustering"
-    result += "<br>"
-    kodeBrg = df[df.cluster == 0].kode_barang
-    namaBrg = df[df.cluster == 0].nama_barang
-    jmlTrans = df[df.cluster == 0].jumlah_transaksi
-    totPenj = df[df.cluster == 0].total_penjualan
-    result += "<table id='resulttbl' class='table table-striped table-hover'>"
-    result += "<thead><tr>"
-    result += "<th>Kode Barang</th>"
-    result += "<th>Nama Barang</th>"
-    result += "<th>Jumlah Transaksi</th>"
-    result += "<th>Total Penjualan</th>"
-    result += "</tr></thead><tbody>"
-    for i in range(len(kodeBrg)):
-        result += "<tr>"
-        result += "<td>"+kodeBrg.iloc[i]+"</td>"
-        result += "<td>"+str(namaBrg.iloc[i])+"</td>"
-        result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
-        result += "<td>"+str(totPenj.iloc[i])+"</td>"
-        result += "</tr>"
-    result += "</tbody></table>"
-    kodeBrg = df[df.cluster == 1].kode_barang
-    namaBrg = df[df.cluster == 1].nama_barang
-    jmlTrans = df[df.cluster == 1].jumlah_transaksi
-    totPenj = df[df.cluster == 1].total_penjualan
-    result += "<table id='resulttbl2' class='table table-striped table-hover'>"
-    result += "<thead><tr>"
-    result += "<th>Kode Barang</th>"
-    result += "<th>Nama Barang</th>"
-    result += "<th>Jumlah Transaksi</th>"
-    result += "<th>Total Penjualan</th>"
-    result += "</tr></thead><tbody>"
-    for i in range(len(kodeBrg)):
-        result += "<tr>"
-        result += "<td>"+kodeBrg.iloc[i]+"</td>"
-        result += "<td>"+str(namaBrg.iloc[i])+"</td>"
-        result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
-        result += "<td>"+str(totPenj.iloc[i])+"</td>"
-        result += "</tr>"
-    result += "</tbody></table>"
-    kodeBrg = df[df.cluster == 2].kode_barang
-    namaBrg = df[df.cluster == 2].nama_barang
-    jmlTrans = df[df.cluster == 2].jumlah_transaksi
-    totPenj = df[df.cluster == 2].total_penjualan
-    result += "<table id='resulttbl3' class='table table-striped table-hover'>"
-    result += "<thead><tr>"
-    result += "<th>Kode Barang</th>"
-    result += "<th>Nama Barang</th>"
-    result += "<th>Jumlah Transaksi</th>"
-    result += "<th>Total Penjualan</th>"
-    result += "</tr></thead><tbody>"
-    for i in range(len(kodeBrg)):
-        result += "<tr>"
-        result += "<td>"+kodeBrg.iloc[i]+"</td>"
-        result += "<td>"+str(namaBrg.iloc[i])+"</td>"
-        result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
-        result += "<td>"+str(totPenj.iloc[i])+"</td>"
-        result += "</tr>"
-    result += "</tbody></table>"
+    # sort array
+    newarr.sort(reverse=True) # patokan label
+
+    idx = 3
+    if selectedLabel >= 0 and selectedLabel <= 2:
+        for i in range(len(oldarr)):
+            if oldarr[i] == newarr[selectedLabel]:
+                idx = i
+
+    if idx >= 0 and idx < len(newarr):
+        result = "Hasil Clustering"   
+        result += "<br>"
+        kodeBrg = df[df.cluster == idx].kode_barang
+        namaBrg = df[df.cluster == idx].nama_barang
+        jmlTrans = df[df.cluster == idx].jumlah_transaksi
+        totPenj = df[df.cluster == idx].total_penjualan
+        result += "<table id='resulttbl' class='table table-striped table-hover'>"
+        result += "<thead><tr>"
+        result += "<th>Kode Barang</th>"
+        result += "<th>Nama Barang</th>"
+        result += "<th>Jumlah Transaksi</th>"
+        result += "<th>Total Penjualan</th>"
+        result += "</tr></thead><tbody>"
+        for i in range(len(kodeBrg)):
+            result += "<tr>"
+            result += "<td>"+kodeBrg.iloc[i]+"</td>"
+            result += "<td>"+str(namaBrg.iloc[i])+"</td>"
+            result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
+            result += "<td>"+str(totPenj.iloc[i])+"</td>"
+            result += "</tr>"
+        result += "</tbody></table>"
+    else:
+        result = '<hr>'
+        result += "Hasil Clustering 1"
+        result += "<br>"
+        kodeBrg = df[df.cluster == 0].kode_barang
+        namaBrg = df[df.cluster == 0].nama_barang
+        jmlTrans = df[df.cluster == 0].jumlah_transaksi
+        totPenj = df[df.cluster == 0].total_penjualan
+        result += "<table id='resulttbl' class='table table-striped table-hover'>"
+        result += "<thead><tr>"
+        result += "<th>Kode Barang</th>"
+        result += "<th>Nama Barang</th>"
+        result += "<th>Jumlah Transaksi</th>"
+        result += "<th>Total Penjualan</th>"
+        result += "</tr></thead><tbody>"
+        for i in range(len(kodeBrg)):
+            result += "<tr>"
+            result += "<td>"+kodeBrg.iloc[i]+"</td>"
+            result += "<td>"+str(namaBrg.iloc[i])+"</td>"
+            result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
+            result += "<td>"+str(totPenj.iloc[i])+"</td>"
+            result += "</tr>"
+        result += "</tbody></table>"
+        result += "Hasil Clustering 2"
+        result += "<br>"
+        kodeBrg = df[df.cluster == 1].kode_barang
+        namaBrg = df[df.cluster == 1].nama_barang
+        jmlTrans = df[df.cluster == 1].jumlah_transaksi
+        totPenj = df[df.cluster == 1].total_penjualan
+        result += "<table id='resulttbl2' class='table table-striped table-hover'>"
+        result += "<thead><tr>"
+        result += "<th>Kode Barang</th>"
+        result += "<th>Nama Barang</th>"
+        result += "<th>Jumlah Transaksi</th>"
+        result += "<th>Total Penjualan</th>"
+        result += "</tr></thead><tbody>"
+        for i in range(len(kodeBrg)):
+            result += "<tr>"
+            result += "<td>"+kodeBrg.iloc[i]+"</td>"
+            result += "<td>"+str(namaBrg.iloc[i])+"</td>"
+            result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
+            result += "<td>"+str(totPenj.iloc[i])+"</td>"
+            result += "</tr>"
+        result += "</tbody></table>"
+        result += "Hasil Clustering 3"
+        result += "<br>"
+        kodeBrg = df[df.cluster == 2].kode_barang
+        namaBrg = df[df.cluster == 2].nama_barang
+        jmlTrans = df[df.cluster == 2].jumlah_transaksi
+        totPenj = df[df.cluster == 2].total_penjualan
+        result += "<table id='resulttbl3' class='table table-striped table-hover'>"
+        result += "<thead><tr>"
+        result += "<th>Kode Barang</th>"
+        result += "<th>Nama Barang</th>"
+        result += "<th>Jumlah Transaksi</th>"
+        result += "<th>Total Penjualan</th>"
+        result += "</tr></thead><tbody>"
+        for i in range(len(kodeBrg)):
+            result += "<tr>"
+            result += "<td>"+kodeBrg.iloc[i]+"</td>"
+            result += "<td>"+str(namaBrg.iloc[i])+"</td>"
+            result += "<td>"+str(jmlTrans.iloc[i])+"</td>"
+            result += "<td>"+str(totPenj.iloc[i])+"</td>"
+            result += "</tr>"
+        result += "</tbody></table>"
 
 
 
