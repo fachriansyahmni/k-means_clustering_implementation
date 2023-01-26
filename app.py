@@ -71,21 +71,17 @@ def index():
 
 @app.route("/cluster", methods=['POST', 'GET'])
 def result():
-    cluster_number = 3
+    cluster_number = 3 # menentukan k
 
-    labelsArr = [
-        "Terlaris",
-        "Laris",
-        "Kurang Laris"
-    ]
+    labelsArr = [ "Terlaris", "Laris", "Kurang Laris" ] # label cluster
 
-    selectedLabel = int(request.form['pilihan_cluster'])
+    selectedLabel = int(request.form['pilihan_cluster']) # mengambil pilihan label cluster yang dipilih
 
     datahtml = ""
     
     # Load dataset
     df = pd.read_csv('data.csv', delimiter=';', skiprows=0, low_memory=False)
-    # menampilkan sample data sebanyak 5 baris
+    # menampilkan sample data dari dataset sebanyak 5 baris
     datahtml += "<h1>Sample Data</h1>" + df.head().to_html()
 
     # scatter plot
@@ -150,7 +146,7 @@ def result():
     plt.clf()
     datahtml += '<img src="../static/scatter_cluster2.png" alt="scatter" width="500" height="500">'
 
-    # k range 1-10
+    # elbow method
     k_rng = range(1,10)
     sse = []
 
@@ -185,18 +181,17 @@ def result():
     datahtml += "<p>Cluster 2</p>"
     datahtml += df[df.cluster == 2].head().to_html()
 
-    # labeling cluster
+    # mendapatkan nilai max dari jumlah transaksi cluster
     maxjmltransaksicluster1 = df[df.cluster == 0].jumlah_transaksi_cluster.max()
     maxjmltransaksicluster2 = df[df.cluster == 1].jumlah_transaksi_cluster.max()
     maxjmltransaksicluster3 = df[df.cluster == 2].jumlah_transaksi_cluster.max()
 
-    # new array
     labelarr = []
     newarr = [maxjmltransaksicluster1,maxjmltransaksicluster2,maxjmltransaksicluster3]
     oldarr = [maxjmltransaksicluster1,maxjmltransaksicluster2,maxjmltransaksicluster3]
 
     # sort array
-    newarr.sort(reverse=True) # patokan label
+    newarr.sort(reverse=True)
 
     idx = 3
     if selectedLabel >= 0 and selectedLabel <= 2:
@@ -204,6 +199,7 @@ def result():
             if oldarr[i] == newarr[selectedLabel]:
                 idx = i
 
+    # menampilkan hasil clustering yang dipilih
     if idx >= 0 and idx < len(newarr):
         result = "Hasil Clustering"   
         result += "<br>"
@@ -292,12 +288,8 @@ def result():
             result += "</tr>"
         result += "</tbody></table>"
 
-
-
-    # result += df[df.cluster == 0].head().to_html()
-
-
-    f = open('templates/result.html', 'w')
+    # render hasil clustering ke html
+    f = open('templates/result.html', 'w') 
     f.write(convertToHtml(result,datahtml))
 
     f.close()
